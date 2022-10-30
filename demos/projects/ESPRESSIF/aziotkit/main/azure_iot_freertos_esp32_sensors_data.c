@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "driver/adc.h"
 
 /* Azure Provisioning/IoT Hub library includes */
 #include "azure_iot_hub_client.h"
@@ -65,6 +66,10 @@ static const char *TAG = "sample_azureiotkit";
 #define sampleazureiotTELEMETRY_ACCELEROMETERX     ( "accelerometerX" )
 #define sampleazureiotTELEMETRY_ACCELEROMETERY     ( "accelerometerY" )
 #define sampleazureiotTELEMETRY_ACCELEROMETERZ     ( "accelerometerZ" )
+#define sampleazureiotTELEMETRY_ORP                ( "ORP" )
+#define sampleazureiotTELEMETRY_VOC                ( "VOC" )
+#define sampleazureiotTELEMETRY_PH                 ( "PH" )
+#define sampleazureiotTELEMETRY_EC                 ( "EC" )
 
 static time_t xLastTelemetrySendTime = INDEFINITE_TIME;
 
@@ -247,6 +252,10 @@ uint32_t ulSampleCreateTelemetry( uint8_t * pucTelemetryData,
         float xTemperature = get_temperature();
         float xHumidity = get_humidity();
         float xLight = get_ambientLight();
+        float xORP = adc1_get_raw(ADC2_CHANNEL_4); //pin 13
+        float xVOC = adc1_get_raw(ADC1_CHANNEL_0); //pin 36
+        float xPH = adc1_get_raw(ADC1_CHANNEL_3);  //pin 39
+        float xEC  = adc1_get_raw(ADC2_CHANNEL_3); //pin 15
         get_pressure_altitude( &xPressure, &xAltitude );
         get_magnetometer( &lMagnetometerX, &lMagnetometerY, &lMagnetometerZ );
         get_pitch_roll_accel( &lPitch, &lRoll, &lAccelerometerX, &lAccelerometerY, &lAccelerometerZ );
@@ -256,6 +265,19 @@ uint32_t ulSampleCreateTelemetry( uint8_t * pucTelemetryData,
         configASSERT( xAzIoTResult == eAzureIoTSuccess );
 
         xAzIoTResult = AzureIoTJSONWriter_AppendBeginObject( &xWriter );
+        configASSERT( xAzIoTResult == eAzureIoTSuccess );
+
+        // pH, EC, ORP, VOC
+        xAzIoTResult = AzureIoTJSONWriter_AppendPropertyWithDoubleValue( &xWriter, ( uint8_t * )sampleazureiotTELEMETRY_PH, lengthof( sampleazureiotTELEMETRY_PH ), xPH, 2 );
+        configASSERT( xAzIoTResult == eAzureIoTSuccess );
+
+        xAzIoTResult = AzureIoTJSONWriter_AppendPropertyWithDoubleValue( &xWriter, ( uint8_t * )sampleazureiotTELEMETRY_EC, lengthof( sampleazureiotTELEMETRY_EC ), xEC, 2 );
+        configASSERT( xAzIoTResult == eAzureIoTSuccess );
+
+        xAzIoTResult = AzureIoTJSONWriter_AppendPropertyWithDoubleValue( &xWriter, ( uint8_t * )sampleazureiotTELEMETRY_VOC, lengthof( sampleazureiotTELEMETRY_VOC ), xVOC, 2 );
+        configASSERT( xAzIoTResult == eAzureIoTSuccess );
+
+        xAzIoTResult = AzureIoTJSONWriter_AppendPropertyWithDoubleValue( &xWriter, ( uint8_t * )sampleazureiotTELEMETRY_ORP, lengthof( sampleazureiotTELEMETRY_VOC ), xORP, 2 );
         configASSERT( xAzIoTResult == eAzureIoTSuccess );
         
         // Temperature, Humidity, Light Intensity
